@@ -108,47 +108,35 @@ async def check_proxy(scheme, login, password, host, port):
 
 class ProxyPool:
     proxies: list
-    iter_: iter
 
     def __init__(self):
         self.proxies = []
-        self.iter_ = None
 
     async def get(self):
-        if not self.iter_:
-            self.iter_ = self._get()
-
-        try:
-            return await self.iter_.__anext__()
-        except StopAsyncIteration:
-            self.iter_ = None
-            return await self.get()
-
-    async def _get(self):
         if not self.proxies:
             self.proxies = await self.fetch_all_proxies()
 
-        for raw_proxy in self.proxies:
-            if proxy := await check_proxy(**raw_proxy):
-                yield proxy
+        while self.proxies and (proxy_raw := self.proxies.pop(0)):
+            if proxy := await check_proxy(**proxy_raw):
+                return proxy
 
     async def fetch_all_proxies(self):
         proxies = [{
-            "scheme": "https",
+            "scheme": cfg.scheme,
             "login": cfg.login,
             "password": cfg.password,
-            "host": "pool.proxy.market",
+            "host": cfg.host,
             "port": port
-        } for port in range(10038, 10500)]
+        } for port in range(10101, 11000)]
+
         return proxies
+
 
 proxy_pool = ProxyPool()
 get_proxy = proxy_pool.get
 
-
 if __name__ == '__main__':
-    print(asyncio.run(get_proxy()))
-    print(asyncio.run(get_proxy()))
-    print(asyncio.run(get_proxy()))
-    print(asyncio.run(get_proxy()))
-
+    for i in range(400):
+        print(asyncio.run(get_proxy()))
+        print(asyncio.run(get_proxy()))
+        print(asyncio.run(get_proxy()))
