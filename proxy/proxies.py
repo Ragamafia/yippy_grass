@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime as dt
 import random as rnd
 
@@ -6,7 +7,7 @@ from aiohttp_proxy import ProxyConnector, ProxyType
 from bs4 import BeautifulSoup as bs
 
 import config as cfg
-from proxy_pool.models import Proxy
+from models import Proxy
 
 TIMEOUT = ClientTimeout(total=cfg.proxy_check_timeout)
 SCAN_TIMEOUT = ClientTimeout(total=60)
@@ -18,13 +19,12 @@ async def get_scam_rate(ip: str):
             try:
                 url = f"https://scamalytics.com/ip/{ip}"
                 async with session.get(url) as resp:
-                    # print(await resp.text())
+                    print(await resp.text())
                     soup = bs(await resp.text(), "html.parser")
                     if score := soup.find("div", {"class": "score"}):
                         return int(score.text.split(": ")[-1].strip())
             except Exception as e:
-                ...
-                # print(f"Can not get scam rate: {e}")
+                print(f"Can not get scam rate: {e}")
 
 
 class BaseChecker:
@@ -60,8 +60,7 @@ class BaseChecker:
                         valid = bool(ip)
                         break
                 except Exception as e:
-                    ...
-                    # print(f"Can not check proxy: {e}")
+                    print(f"Can not check proxy: {e}")
 
             scam_rate = ip and await get_scam_rate(ip)
             if not scam_rate or scam_rate > 11:
@@ -106,17 +105,42 @@ async def check_proxy(scheme, login, password, host, port) -> dict:
     return await checker(scheme, login, password, host, port).check()
 
 
+class ProxyPool:
+    proxies: list
+    iter_: iter
 
+    def __init__(self):
+        self.proxies = []
+        self.iter_ = None
 
+    async def get(self):
+        if not self.iter_:
+            self.iter_ = self._get()
 
+        try:
+            return await self.iter_.__anext__()
+        except StopAsyncIteration:
+            self.iter_ = None
+            return await self.get()
 
-PROXIES = await get_all_proxies_from_proxypool()
+    async def _get(self):
+        if not self.proxies:
+            self.proxies = await self.fetch_all_proxies()
 
-async def proxy_getter():
-    global PROXIES
+        for raw_proxy in self.proxies:
+            if proxy := await check_proxy(**raw_proxy):
+                yield proxy
 
-    for raw_proxy in PROXIES:
-        if proxy := await check_proxy(**raw_proxy):
-            yield proxy
+    async def fetch_all_proxies(self):
+        proxies = [{
+            "scheme": "https",
+            "login": "kEUXJtHGBGFP",
+            "password": "RNW78Fm5",
+            "host": "pool.proxy.market",
+            "port": port,
+        } for port in range(10037, 10097)]
+        return proxies
 
-get_proxy = proxy_getter()
+proxy_pool = ProxyPool()
+get_proxy = proxy_pool.get()
+
