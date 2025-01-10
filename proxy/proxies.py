@@ -19,12 +19,13 @@ async def get_scam_rate(ip: str):
             try:
                 url = f"https://scamalytics.com/ip/{ip}"
                 async with session.get(url) as resp:
-                    print(await resp.text())
+                    # print(await resp.text())
                     soup = bs(await resp.text(), "html.parser")
                     if score := soup.find("div", {"class": "score"}):
                         return int(score.text.split(": ")[-1].strip())
             except Exception as e:
-                print(f"Can not get scam rate: {e}")
+                ...
+                # print(f"Can not get scam rate: {e}")
 
 
 class BaseChecker:
@@ -67,14 +68,14 @@ class BaseChecker:
                 valid = False
 
         return Proxy(
-            host=self.host,
-            port=self.port,
+            scheme=self.scheme,
             login=self.login,
             password=self.password,
-            scheme=self.scheme,
+            host=self.host,
+            port=self.port,
             ip=ip,
             status="free" if valid else "dead",
-            last_checked=int(dt.utcnow().timestamp()),
+            # last_checked=int(dt.utcnow().timestamp()),
         )
 
     async def _check(self, response) -> str:
@@ -100,7 +101,7 @@ checkers = [
 ]
 
 
-async def check_proxy(scheme, login, password, host, port) -> dict:
+async def check_proxy(scheme, login, password, host, port):
     checker = rnd.choice(checkers)
     return await checker(scheme, login, password, host, port).check()
 
@@ -134,13 +135,20 @@ class ProxyPool:
     async def fetch_all_proxies(self):
         proxies = [{
             "scheme": "https",
-            "login": "kEUXJtHGBGFP",
-            "password": "RNW78Fm5",
+            "login": cfg.login,
+            "password": cfg.password,
             "host": "pool.proxy.market",
-            "port": port,
-        } for port in range(10037, 10097)]
+            "port": port
+        } for port in range(10038, 10500)]
         return proxies
 
 proxy_pool = ProxyPool()
-get_proxy = proxy_pool.get()
+get_proxy = proxy_pool.get
+
+
+if __name__ == '__main__':
+    print(asyncio.run(get_proxy()))
+    print(asyncio.run(get_proxy()))
+    print(asyncio.run(get_proxy()))
+    print(asyncio.run(get_proxy()))
 

@@ -1,7 +1,7 @@
-from datetime import datetime as dt
 from typing import Literal
+from typing import Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 Scheme = Literal["http", "https"]
 ProxyStatus = Literal["busy", "free", "dead"]
@@ -13,11 +13,9 @@ class Proxy(BaseModel):
     password: str
     host: str
     port: int
-    ip: str
+    ip: Union[str, None] = None
 
     status: ProxyStatus = "free"
-    last_checked: int = Field(default_factory=lambda: int(dt.utcnow().timestamp()))
-    last_used: int
 
     def __hash__(self):
         return hash(self.ip)
