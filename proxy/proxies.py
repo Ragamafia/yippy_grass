@@ -1,4 +1,6 @@
 import asyncio
+asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
 from datetime import datetime as dt
 import random as rnd
 
@@ -7,7 +9,7 @@ from aiohttp_proxy import ProxyConnector, ProxyType
 from bs4 import BeautifulSoup as bs
 
 import config as cfg
-from models import Proxy
+from proxy.models import Proxy
 
 TIMEOUT = ClientTimeout(total=cfg.proxy_check_timeout)
 SCAN_TIMEOUT = ClientTimeout(total=60)
@@ -135,8 +137,13 @@ class ProxyPool:
 proxy_pool = ProxyPool()
 get_proxy = proxy_pool.get
 
-if __name__ == '__main__':
-    for i in range(400):
-        print(asyncio.run(get_proxy()))
-        print(asyncio.run(get_proxy()))
-        print(asyncio.run(get_proxy()))
+# if __name__ == '__main__':
+#     for i in range(100):
+#         print(asyncio.run(get_proxy()))
+
+def search_proxy():
+    for i in range(100):
+        asyncio.run(get_proxy())
+
+#search_proxy()
+

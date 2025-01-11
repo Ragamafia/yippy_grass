@@ -4,6 +4,6 @@ proxy_scam_check_attempts = 10
 
 
 scheme = "http"
-login = ""
-password = ""
+login = "kEUXJtHGBGFP"
+password = "RNW78Fm5"
 host = "pool.proxy.market"
