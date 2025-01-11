@@ -1,5 +1,4 @@
-from typing import Literal
-from typing import Union
+from typing import Literal, Union
 
 from pydantic import BaseModel
 
@@ -22,3 +21,15 @@ class Proxy(BaseModel):
 
     def __eq__(self, other):
         return self.ip == other.ip
+
+    @property
+    def url(self):
+        return (f"{self.scheme}://{self.login}:{self.password}@"
+                f"{self.host}:{self.port}")
+
+
+__all__ = [
+    "Proxy",
+    "Scheme",
+    "ProxyStatus",
+]
