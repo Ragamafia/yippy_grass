@@ -1,18 +1,17 @@
 import asyncio
-asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-
-from datetime import datetime as dt
+import os
+if os.name == 'nt':
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 import random as rnd
 
 from aiohttp import ClientSession, ClientTimeout
 from aiohttp_proxy import ProxyConnector, ProxyType
 from bs4 import BeautifulSoup as bs
 
-import config as cfg
-from proxy.models import Proxy
+from config import cfg
+from proxies.models import Proxy
 
 TIMEOUT = ClientTimeout(total=cfg.proxy_check_timeout)
-SCAN_TIMEOUT = ClientTimeout(total=60)
 
 
 async def get_scam_rate(ip: str):
@@ -77,7 +76,6 @@ class BaseChecker:
             port=self.port,
             ip=ip,
             status="free" if valid else "dead",
-            # last_checked=int(dt.utcnow().timestamp()),
         )
 
     async def _check(self, response) -> str:
@@ -137,13 +135,8 @@ class ProxyPool:
 proxy_pool = ProxyPool()
 get_proxy = proxy_pool.get
 
-# if __name__ == '__main__':
-#     for i in range(100):
-#         print(asyncio.run(get_proxy()))
 
-def search_proxy():
-    for i in range(100):
-        asyncio.run(get_proxy())
-
-#search_proxy()
-
+__all__ = [
+    "get_proxy",
+    "ProxyPool",
+]
