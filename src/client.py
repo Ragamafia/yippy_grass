@@ -2,29 +2,36 @@ import asyncio
 
 from aiohttp import ClientSession
 
-from proxies import get_proxy
-from logger import logger
+from proxies.pool import get_proxy
+from src import logger
 
 SOCKET_URL = 'wss://proxy2.wynd.network:4444'
-ATTEMPTS = 3
+ATTEMPTS = 50
 
 
 async def connect_to_ws(session: ClientSession, proxy: str):
-    logger.info(f"Connecting with proxy: {proxy}")
+    connected = False
+
+    logger.logger.info(f"Connecting with proxy: {proxy}")
     async with session.ws_connect(SOCKET_URL, proxy=proxy) as ws:
         async for msg in ws:
-            print(msg)
+            print(f'Connected: {msg}')
+            if msg is not None:
+                connected = True
+
+    return connected
 
 
 async def main():
-    proxy = await get_proxy()
-
     async with ClientSession() as session:
         for _ in range(ATTEMPTS):
+            proxy = await get_proxy()
             try:
-                await connect_to_ws(session, proxy.url)
+                connected = await connect_to_ws(session, proxy.url)
+                if connected:
+                    break
             except Exception as e:
-                print(e)
+                print(f'Exception: {e}')
 
 
 if __name__ == "__main__":

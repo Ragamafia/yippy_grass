@@ -1,2 +1,2 @@
-from proxies.pool import get_proxy
-from proxies.models import Proxy
+from src.proxies.pool import get_proxy
+from src.proxies.models import Proxy
