@@ -45,6 +45,3 @@ async def main():
 
         await send_task
         await recive_task
-
-asyncio.run(main())
-
