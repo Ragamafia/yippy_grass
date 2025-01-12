@@ -3,7 +3,7 @@ import json
 import random
 import uuid
 
-from aiohttp import ClientSession
+from aiohttp import ClientSession, WSMsgType
 #from fake_useragent import FakeUserAgent
 
 from loguru import logger
@@ -17,7 +17,7 @@ ATTEMPTS = 50
 BROWSER_ID = str(uuid.uuid3(uuid.NAMESPACE_DNS, SOCKET_URL))
 #USER_AGENT = FakeUserAgent().random
 
-response = {"id": "",
+headers = {"id": "",
                       "origin_action": "AUTH",
                       "result": {"browser_id": BROWSER_ID,
                                  "user_id": "2rKa9HOuohobeY3DEfxFx2xWj7I",
@@ -43,18 +43,37 @@ async def connect_to_ws(session: ClientSession, proxy: str):
     async with session.ws_connect(SOCKET_URL, proxy=proxy) as ws:
         async for msg in ws:
             if msg is not None:
+
                 logger.info(f"Websocket connect: {msg}")
                 msg_attr = msg.__getattribute__('data')
-                msg_attr_dict = json.loads(msg_attr)
-                id = msg_attr_dict.get('id')
-                response['id'] = id
+                data = json.loads(msg_attr)
+                if await handler_msg(data):
+                    id = data.get('id')
+                    headers['id'] = id
+                    connected = True
 
-                connected = True
-
-                await ws.send_json(response)
+                    await ws.send_json(headers)
 
     return connected
 
+
+async def handler_msg(msg):
+    is_text = False
+
+    if msg.type == WSMsgType.TEXT:
+        is_text = True
+        try:
+            logger.info(f"Recived JSON: {msg}'")
+
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to decode JSON: {e} - '{msg}'")
+
+    elif msg.type == WSMsgType.CLOSED:
+        logger.info("WebSocket closed")
+    elif msg.type == WSMsgType.ERROR:
+        logger.error("WebSocket error")
+
+    return is_text
 
 async def main():
     async with ClientSession() as session:
@@ -66,6 +85,7 @@ async def main():
                     break
             except Exception as e:
                 ...
+
 
 if __name__ == "__main__":
     asyncio.run(main())
