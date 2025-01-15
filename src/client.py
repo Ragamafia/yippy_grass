@@ -61,18 +61,15 @@ async def connect_to_ws(session: ClientSession, proxy: str):
             data = json.loads(message_data)
             logger.info(f"<- Messages received: {data}")
 
-            try:
-                if data.get('action') == "AUTH":
-                    await send_headers(data, ws)
+            if data.get('action') == "AUTH":
+                await send_headers(data, ws)
 
-                if data.get('action') == "HTTP_REQUEST":
+            if data.get('action') == "HTTP_REQUEST":
+                if await send_http_request(data, ws):
                     await send_ping(ws)
 
-                if data.get('action') == "PONG":
-                    await send_pong(data, ws)
-
-            except Exception as e:
-                logger.info(f"No correct ACTION: {e}")
+            if data.get('action') == "PONG":
+                await send_pong(data, ws)
 
         connected = True
     return connected
@@ -89,6 +86,8 @@ async def send_http_request(data, ws):
     http_request['result']['url'] = data.get('data').get('url')
     await ws.send_json(http_request)
     logger.info(f"-> Send message: {http_request}")
+
+    return True
 
 
 async def send_ping(ws):
