@@ -16,6 +16,8 @@ class Config(BaseSettings):
     proxy_check_attempts: int = 1
     proxy_scam_check_attempts: int = 10
 
+    request_time_sleep: int = 10
+
     scheme: str = "http"
     login: str = os.getenv('login')
     password: str = os.getenv('password')

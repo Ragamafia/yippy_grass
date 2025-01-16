@@ -128,7 +128,7 @@ class ProxyPool:
             "password": cfg.password,
             "host": cfg.host,
             "port": port
-        } for port in range(10500, 11000)]
+        } for port in range(10001, 10999)]
 
         return proxies
 
