@@ -16,7 +16,10 @@ class Config(BaseSettings):
     proxy_check_attempts: int = 1
     proxy_scam_check_attempts: int = 10
 
-    request_time_sleep: int = 10
+    request_time_sleep: int = 60
+
+    user_id: str = '2rKa9HOuohobeY3DEfxFx2xWj7I'
+    devices_count: int = 100
 
     scheme: str = "http"
     login: str = os.getenv('login')

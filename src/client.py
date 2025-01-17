@@ -6,6 +6,7 @@ import time
 
 from loguru import logger
 from aiohttp import ClientSession, WSMsgType
+from fake_useragent import FakeUserAgent
 
 from proxies.pool import get_proxy
 from config import cfg
@@ -13,14 +14,15 @@ from config import cfg
 
 SOCKET_URL = random.choice(cfg.urls)
 ATTEMPTS = 50
+user_agent = FakeUserAgent().random
 
-BROWSER_ID = str(uuid.uuid3(uuid.NAMESPACE_DNS, SOCKET_URL))
+#BROWSER_ID = str(uuid.uuid3(uuid.NAMESPACE_DNS, SOCKET_URL))
 
 headers = {"id": "",
            "origin_action": "AUTH",
-           "result": {"browser_id": BROWSER_ID,
-                      "user_id": "2rKa9HOuohobeY3DEfxFx2xWj7I",
-                      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36",
+           "result": {"browser_id": 'c1581145-ffb7-3b29-89d6-838a55c4b3c9',
+                      "user_id": cfg.user_id,
+                      "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_7_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.8 Mobile/15E148 Safari/604.1",
                       "timestamp": 1736645161,
                       "device_type": "extension",
                       "version": "4.26.2",
@@ -59,25 +61,28 @@ class Connect:
 
     async def connect_to_ws(self):
         connected = False
+        try:
+            async with self.session.ws_connect(SOCKET_URL, proxy=self.proxy) as self.ws:
+                async for message in self.ws:
+                    message_data = message.__getattribute__('data')
+                    self.data = json.loads(message_data)
+                    logger.info(f"<- Messages received: {self.data}", color="<blue>")
 
-        async with self.session.ws_connect(SOCKET_URL, proxy=self.proxy) as self.ws:
-            async for message in self.ws:
-                message_data = message.__getattribute__('data')
-                self.data = json.loads(message_data)
-                logger.info(f"<- Messages received: {self.data}", color="<blue>")
+                    if self.data.get('action') == "AUTH":
+                        await self.send_headers()
 
-                if self.data.get('action') == "AUTH":
-                    await self.send_headers()
+                    if self.data.get('action') == "HTTP_REQUEST":
+                        if await self.send_http_request():
+                            await self.send_ping()
 
-                if self.data.get('action') == "HTTP_REQUEST":
-                    if await self.send_http_request():
-                        await self.send_ping()
+                    if self.data.get('action') == "PONG":
+                        await self.send_pong()
 
-                if self.data.get('action') == "PONG":
-                    await self.send_pong()
+                    connected = True
+            return connected
+        except Exception as e:
+            logger.error(f"<- Message not received: {e} - {self.data}")
 
-                connected = True
-        return connected
 
     async def send_headers(self):
         headers['id'] = self.data.get('id')
