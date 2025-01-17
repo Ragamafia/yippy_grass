@@ -5,8 +5,7 @@ import uuid
 import time
 
 from loguru import logger
-from aiohttp import ClientSession, WSMsgType
-#from fake_useragent import FakeUserAgent
+from aiohttp import ClientSession
 
 from proxies.pool import get_proxy
 from config import cfg
@@ -16,8 +15,6 @@ SOCKET_URL = random.choice(cfg.urls)
 ATTEMPTS = 50
 
 BROWSER_ID = str(uuid.uuid3(uuid.NAMESPACE_DNS, SOCKET_URL))
-
-#USER_AGENT = FakeUserAgent().random
 
 headers = {"id": "",
            "origin_action": "AUTH",
@@ -53,35 +50,34 @@ pong = {"id": "", "origin_action": "PONG"}
 
 
 class Connect:
-    session: ClientSession
-    proxy: str
-    connected: bool
-
-    def __init__(self, session, proxy):
+    def __init__(self, session: ClientSession, proxy: str):
         self.session = session
         self.proxy = proxy
 
     async def connect_to_ws(self):
-        connected = False
+        self.connected = False
+        try:
+            async with self.session.ws_connect(SOCKET_URL, proxy=self.proxy) as self.ws:
+                async for message in self.ws:
+                    message_data = message.__getattribute__('data')
+                    self.data = json.loads(message_data)
+                    logger.info(f"<- Messages received: {self.data}", color="<blue>")
 
-        async with self.session.ws_connect(SOCKET_URL, proxy=self.proxy) as self.ws:
-            async for message in self.ws:
-                message_data = message.__getattribute__('data')
-                self.data = json.loads(message_data)
-                logger.info(f"<- Messages received: {self.data}")
+                    if self.data.get('action') == "AUTH":
+                        await self.send_headers()
 
-                if self.data.get('action') == "AUTH":
-                    await self.send_headers()
+                    if self.data.get('action') == "HTTP_REQUEST":
+                        if await self.send_http_request():
+                            await self.send_ping()
 
-                if self.data.get('action') == "HTTP_REQUEST":
-                    if await self.send_http_request():
-                        await self.send_ping()
+                    if self.data.get('action') == "PONG":
+                        await self.send_pong()
 
-                if self.data.get('action') == "PONG":
-                    await self.send_pong()
+                self.connected = True
+            return self.connected
 
-                connected = True
-        return connected
+        except Exception as e:
+            logger.error(f'No connect: {e}')
 
     async def send_headers(self):
         headers['id'] = self.data.get('id')
@@ -120,6 +116,7 @@ async def main():
                 connect = await Connect(session, proxy.url).connect_to_ws()
                 if connect:
                     break
+
             except Exception as e:
                 logger.error(f"Proxy fail: {e}")
 

@@ -8,8 +8,8 @@ from aiohttp import ClientSession, ClientTimeout
 from aiohttp_proxy import ProxyConnector, ProxyType
 from bs4 import BeautifulSoup as bs
 
-from src.config import cfg
-from src.proxies.models import Proxy
+from config import cfg
+from proxies.models import Proxy
 
 TIMEOUT = ClientTimeout(total=cfg.proxy_check_timeout)
 
@@ -128,7 +128,7 @@ class ProxyPool:
             "password": cfg.password,
             "host": cfg.host,
             "port": port
-        } for port in range(10001, 10999)]
+        } for port in range(10320, 10999)]
 
         return proxies
 

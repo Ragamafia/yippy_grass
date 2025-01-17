@@ -59,7 +59,7 @@ async def connect_to_ws(session: ClientSession, proxy: str):
         async for message in ws:
             message_data = message.__getattribute__('data')
             data = json.loads(message_data)
-            logger.info(f"<- Messages received: {data}")
+            logger.info(f"<- Messages received: {data}", color="<blue>")
 
             if data.get('action') == "AUTH":
                 await send_headers(data, ws)
@@ -111,13 +111,14 @@ async def main():
     async with ClientSession() as session:
         for _ in range(ATTEMPTS):
             proxy = await get_proxy()
+            logger.info(f"Connecting with proxy: {proxy.url}")
             try:
                 connected = await connect_to_ws(session, proxy.url)
                 if connected:
                     break
             except Exception as e:
-                logger.error(f"Proxy {e}")
+                logger.error(f"Proxy fail: {e}")
 
-
+#
 # if __name__ == "__main__":
 #     asyncio.run(main())
