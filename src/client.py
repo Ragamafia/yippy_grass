@@ -5,7 +5,7 @@ import uuid
 import time
 
 from loguru import logger
-from aiohttp import ClientSession
+from aiohttp import ClientSession, WSMsgType
 
 from proxies.pool import get_proxy
 from config import cfg
@@ -50,34 +50,34 @@ pong = {"id": "", "origin_action": "PONG"}
 
 
 class Connect:
-    def __init__(self, session: ClientSession, proxy: str):
+    session: ClientSession
+    proxy: str
+
+    def __init__(self, session, proxy):
         self.session = session
         self.proxy = proxy
 
     async def connect_to_ws(self):
-        self.connected = False
-        try:
-            async with self.session.ws_connect(SOCKET_URL, proxy=self.proxy) as self.ws:
-                async for message in self.ws:
-                    message_data = message.__getattribute__('data')
-                    self.data = json.loads(message_data)
-                    logger.info(f"<- Messages received: {self.data}", color="<blue>")
+        connected = False
 
-                    if self.data.get('action') == "AUTH":
-                        await self.send_headers()
+        async with self.session.ws_connect(SOCKET_URL, proxy=self.proxy) as self.ws:
+            async for message in self.ws:
+                message_data = message.__getattribute__('data')
+                self.data = json.loads(message_data)
+                logger.info(f"<- Messages received: {self.data}", color="<blue>")
 
-                    if self.data.get('action') == "HTTP_REQUEST":
-                        if await self.send_http_request():
-                            await self.send_ping()
+                if self.data.get('action') == "AUTH":
+                    await self.send_headers()
 
-                    if self.data.get('action') == "PONG":
-                        await self.send_pong()
+                if self.data.get('action') == "HTTP_REQUEST":
+                    if await self.send_http_request():
+                        await self.send_ping()
 
-                self.connected = True
-            return self.connected
+                if self.data.get('action') == "PONG":
+                    await self.send_pong()
 
-        except Exception as e:
-            logger.error(f'No connect: {e}')
+                connected = True
+        return connected
 
     async def send_headers(self):
         headers['id'] = self.data.get('id')
