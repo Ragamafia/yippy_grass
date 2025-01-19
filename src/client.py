@@ -72,7 +72,7 @@ class Connect:
             return connected
 
         except Exception as e:
-            logger.error(f"Message not received. Error: {e} - {message_data}")
+            logger.error(f"<- Message not received: {e} - {self.data}")
 
     async def send_headers(self):
         headers = dev.generate_device()
