@@ -28,16 +28,25 @@ class Device:
     def generate_headers(self):
         with open(self.user_agents, 'r') as file:
             self.data = json.load(file)
-            user_agent = self.data.pop(0)
-            logger.info(f'Load new device: {user_agent}')
+            self.user_agent = self.data.pop(0)
 
+            logger.info(f'Load new device: {self.user_agent}')
+
+        self.save_use_device(self.user_agent)
         self.update_user_agent_list(self.data)
 
-        for k, v in user_agent.items():
+        for k, v in self.user_agent.items():
             headers['result']['browser_id'] = k
             headers['result']['user_agent'] = v
 
             return headers
+
+    def save_use_device(self, data):
+        with open(self.use_devices, 'r') as file_before:
+            before = json.load(file_before)
+            before.append(data)
+        with open(self.use_devices, 'w') as file_after:
+            json.dump(before, file_after, indent=4)
 
     def update_user_agent_list(self, data):
         with open(self.user_agents, 'w') as file:
