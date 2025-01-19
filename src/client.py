@@ -7,7 +7,7 @@ import time
 from loguru import logger
 from aiohttp import ClientSession
 
-from message import dev
+from answer import dev
 from proxies.pool import get_proxy
 from config import cfg
 
@@ -56,7 +56,7 @@ class Connect:
 
                     message_data = message.__getattribute__('data')
                     self.data = json.loads(message_data)
-                    logger.info(f"<- Received: {self.data}", color="<blue>")
+                    logger.info(f"<- Received: {self.data}")
 
                     if self.data.get('action') == "AUTH":
                         await self.send_headers()
@@ -77,7 +77,6 @@ class Connect:
     async def send_headers(self):
         headers = dev.generate_device()
         headers["id"] = self.data.get("id")
-        print(headers)
         await self.ws.send_json(headers)
         logger.info(f" -> Sending: {headers}")
 
