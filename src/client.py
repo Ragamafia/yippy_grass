@@ -5,28 +5,14 @@ import uuid
 import time
 
 from loguru import logger
-from aiohttp import ClientSession, WSMsgType
+from aiohttp import ClientSession
 
+from message import dev
 from proxies.pool import get_proxy
 from config import cfg
 
 
 SOCKET_URL = random.choice(cfg.urls)
-ATTEMPTS = 50
-
-BROWSER_ID = str(uuid.uuid3(uuid.NAMESPACE_DNS, SOCKET_URL))
-
-headers = {"id": "",
-           "origin_action": "AUTH",
-           "result": {"browser_id": BROWSER_ID,
-                      "user_id": "2rKa9HOuohobeY3DEfxFx2xWj7I",
-                      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36",
-                      "timestamp": 1736645161,
-                      "device_type": "extension",
-                      "version": "4.26.2",
-                      "extension_id": "ilehaonighjijnmpnagapkhpcdbhclfg"
-                      }
-           }
 
 http_request = {"id": "",
                 "origin_action": "HTTP_REQUEST",
@@ -52,6 +38,10 @@ pong = {"id": "", "origin_action": "PONG"}
 class Connect:
     session: ClientSession
     proxy: str
+    headers: dict
+    http_request: dict
+    ping: dict
+    pong: dict
 
     def __init__(self, session, proxy):
         self.session = session
@@ -60,45 +50,52 @@ class Connect:
     async def connect_to_ws(self):
         connected = False
 
-        async with self.session.ws_connect(SOCKET_URL, proxy=self.proxy) as self.ws:
-            async for message in self.ws:
-                message_data = message.__getattribute__('data')
-                self.data = json.loads(message_data)
-                logger.info(f"<- Messages received: {self.data}", color="<blue>")
+        try:
+            async with self.session.ws_connect(SOCKET_URL, proxy=self.proxy) as self.ws:
+                async for message in self.ws:
 
-                if self.data.get('action') == "AUTH":
-                    await self.send_headers()
+                    message_data = message.__getattribute__('data')
+                    self.data = json.loads(message_data)
+                    logger.info(f"<- Received: {self.data}", color="<blue>")
 
-                if self.data.get('action') == "HTTP_REQUEST":
-                    if await self.send_http_request():
-                        await self.send_ping()
+                    if self.data.get('action') == "AUTH":
+                        await self.send_headers()
 
-                if self.data.get('action') == "PONG":
-                    await self.send_pong()
+                    if self.data.get('action') == "HTTP_REQUEST":
+                        if await self.send_http_request():
+                            await self.send_ping()
 
-                connected = True
-        return connected
+                    if self.data.get('action') == "PONG":
+                        await self.send_pong()
+
+                    connected = True
+            return connected
+
+        except Exception as e:
+            logger.error(f"Message not received. Error: {e} - {message_data}")
 
     async def send_headers(self):
-        headers['id'] = self.data.get('id')
+        headers = dev.generate_device()
+        headers["id"] = self.data.get("id")
+        print(headers)
         await self.ws.send_json(headers)
-        logger.info(f" -> Send message: {headers}")
+        logger.info(f" -> Sending: {headers}")
 
     async def send_http_request(self):
-        http_request['id'] = self.data.get('id')
-        http_request['result']['url'] = self.data.get('data').get('url')
+        http_request["id"] = self.data.get("id")
+        http_request["result"]["url"] = self.data.get("data").get("url")
         await self.ws.send_json(http_request)
         logger.info(f"-> Send message: {http_request}")
         return True
 
     async def send_ping(self):
-        ping['id'] = str(uuid.uuid3(uuid.NAMESPACE_DNS, SOCKET_URL))
+        ping["id"] = str(uuid.uuid3(uuid.NAMESPACE_DNS, SOCKET_URL))
         await self.ws.send_json(ping)
         logger.info(f"-> Send message: {ping}")
 
     async def send_pong(self):
-        pong['id'] = self.data.get('id')
-        ping['id'] = str(uuid.uuid4())
+        pong["id"] = self.data.get("id")
+        ping["id"] = str(uuid.uuid4())
         await self.ws.send_json(pong)
         logger.info(f'-> Send message: {pong}')
 
@@ -109,7 +106,7 @@ class Connect:
 
 async def main():
     async with ClientSession() as session:
-        for _ in range(ATTEMPTS):
+        for _ in range(cfg.ATTEMPTS):
             proxy = await get_proxy()
             logger.info(f"Connecting with proxy: {proxy.url}")
             try:

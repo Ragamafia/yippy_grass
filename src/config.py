@@ -12,16 +12,23 @@ class Config(BaseSettings):
         'wss://proxy2.wynd.network:4650',
     ]
 
+    user_agents: str = 'C:\\Users\sales3-suzuki\Desktop\PycharmProjects\yippy_grass\\user_agent.json'
+    update_list: str = 'C:\\Users\sales3-suzuki\Desktop\PycharmProjects\yippy_grass\\devices'
+    device_count: int = 1
+
+    ATTEMPTS: int = 50
     proxy_check_timeout: int = 6
     proxy_check_attempts: int = 1
     proxy_scam_check_attempts: int = 10
 
-    request_time_sleep: int = 10
+    request_time_sleep: int = 60
 
-    scheme: str = "http"
+    user_id: str = os.getenv('user_id')
+
+    scheme: str = 'http'
     login: str = os.getenv('login')
     password: str = os.getenv('password')
-    host: str = "pool.proxy.market"
+    host: str = 'pool.proxy.market'
 
 
 cfg = Config()
