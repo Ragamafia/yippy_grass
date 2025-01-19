@@ -14,7 +14,7 @@ class Config(BaseSettings):
 
     user_agents: str = 'C:\\Users\sales3-suzuki\Desktop\PycharmProjects\yippy_grass\\user_agent.json'
     use_devices: str = 'C:\\Users\sales3-suzuki\Desktop\PycharmProjects\yippy_grass\\use_devices.json'
-    free_devices: str = 'C:\\Users\sales3-suzuki\Desktop\PycharmProjects\yippy_grass\\free_devices.json'
+
     device_count: int = 1
 
     ATTEMPTS: int = 50

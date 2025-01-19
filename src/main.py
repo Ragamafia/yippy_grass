@@ -5,8 +5,8 @@ from aiohttp import ClientSession
 
 from client import Connect as connect
 from head import device
-from config import cfg
 from proxies.pool import get_proxy
+from config import cfg
 
 
 async def main():

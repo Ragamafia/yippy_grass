@@ -18,12 +18,9 @@ headers = {"id": "",
 
 
 class Device:
-    def __init__(self, user_agents, use_devices, free_devices):
+    def __init__(self, user_agents, use_devices):
         self.user_agents = user_agents
         self.use_devices = use_devices
-        self.free_devices = free_devices
-
-        self.generate_headers()
 
     def generate_headers(self):
         with open(self.user_agents, 'r') as file:
@@ -53,6 +50,6 @@ class Device:
             json.dump(data, file, indent=4)
 
 
-device = Device(cfg.user_agents, cfg.use_devices, cfg.free_devices)
+device = Device(cfg.user_agents, cfg.use_devices)
 
 
