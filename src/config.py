@@ -13,7 +13,8 @@ class Config(BaseSettings):
     ]
 
     user_agents: str = 'C:\\Users\sales3-suzuki\Desktop\PycharmProjects\yippy_grass\\user_agent.json'
-    update_list: str = 'C:\\Users\sales3-suzuki\Desktop\PycharmProjects\yippy_grass\\free_devices.json'
+    use_devices: str = 'C:\\Users\sales3-suzuki\Desktop\PycharmProjects\yippy_grass\\use_devices.json'
+    free_devices: str = 'C:\\Users\sales3-suzuki\Desktop\PycharmProjects\yippy_grass\\free_devices.json'
     device_count: int = 1
 
     ATTEMPTS: int = 50
@@ -23,7 +24,7 @@ class Config(BaseSettings):
 
     request_time_sleep: int = 60
 
-    devices_count: int = 1
+    devices_count: int = 2
 
     user_id: str = os.getenv('user_id')
 
