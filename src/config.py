@@ -15,7 +15,7 @@ class Config(BaseSettings):
     user_agents: str = 'C:\\Users\sales3-suzuki\Desktop\PycharmProjects\yippy_grass\\user_agent.json'
     use_devices: str = 'C:\\Users\sales3-suzuki\Desktop\PycharmProjects\yippy_grass\\use_devices.json'
 
-    device_count: int = 1
+    device_count: int = 3
 
     ATTEMPTS: int = 50
     proxy_check_timeout: int = 6
@@ -23,8 +23,6 @@ class Config(BaseSettings):
     proxy_scam_check_attempts: int = 10
 
     request_time_sleep: int = 60
-
-    devices_count: int = 2
 
     user_id: str = os.getenv('user_id')
 

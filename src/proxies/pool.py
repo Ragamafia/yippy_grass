@@ -113,6 +113,7 @@ class ProxyPool:
         self.proxies = []
 
     async def get(self):
+
         if not self.proxies:
             self.proxies = await self.fetch_all_proxies()
 
@@ -135,7 +136,6 @@ class ProxyPool:
 
 proxy_pool = ProxyPool()
 get_proxy = proxy_pool.get
-
 
 __all__ = [
     "get_proxy",

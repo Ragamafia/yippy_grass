@@ -59,11 +59,11 @@ class Connect:
                     if self.data.get('action') == "AUTH":
                         await self.send_headers()
 
-                    if self.data.get('action') == "HTTP_REQUEST":
+                    elif self.data.get('action') == "HTTP_REQUEST":
                         if await self.send_http_request():
                             await self.send_ping()
 
-                    if self.data.get('action') == "PONG":
+                    elif self.data.get('action') == "PONG":
                         await self.send_pong()
 
                     connected = True

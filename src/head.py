@@ -1,4 +1,5 @@
 import json
+from copy import deepcopy
 
 from config import cfg
 from logger import logger
@@ -33,10 +34,12 @@ class Device:
         self.update_user_agent_list(self.data)
 
         for k, v in self.user_agent.items():
-            headers['result']['browser_id'] = k
-            headers['result']['user_agent'] = v
+            result = deepcopy(headers)
+            result["result"]['browser_id'] = k
+            result["result"]['user_agent'] = v
 
-            return headers
+            return result
+
 
     def save_use_device(self, data):
         with open(self.use_devices, 'r') as file_before:
