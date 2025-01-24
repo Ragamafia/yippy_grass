@@ -12,10 +12,7 @@ class Config(BaseSettings):
         'wss://proxy2.wynd.network:4650',
     ]
 
-    user_agents: str = 'C:\\Users\sales3-suzuki\Desktop\PycharmProjects\yippy_grass\\user_agent.json'
-    use_devices: str = 'C:\\Users\sales3-suzuki\Desktop\PycharmProjects\yippy_grass\\use_devices.json'
-
-    device_count: int = 3
+    device_count: int = 5
 
     ATTEMPTS: int = 50
     proxy_check_timeout: int = 6

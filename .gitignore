@@ -28,4 +28,7 @@ data/*
 iqt.egg-info
 src/webdriver
 proxy.txt
+devices.json
+
+
 

@@ -11,6 +11,18 @@ from config import cfg
 
 SOCKET_URL = random.choice(cfg.urls)
 
+headers = {"id": "",
+           "origin_action": "AUTH",
+           "result": {"browser_id": "",
+                      "user_id": "",
+                      "user_agent": "",
+                      "timestamp": 1736645161,
+                      "device_type": "extension",
+                      "version": "4.26.2",
+                      "extension_id": "ilehaonighjijnmpnagapkhpcdbhclfg"
+                      }
+           }
+
 http_request = {"id": "",
                 "origin_action": "HTTP_REQUEST",
                 "result": {"url": "",
