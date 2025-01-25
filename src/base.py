@@ -21,7 +21,7 @@ except TypeError:
                     "Please use Python 3.10+ or create file <fake_user_agents.json> with user agented presented"
                 )
 
-        filepath: Path = Path("fake_user_agents.json")
+        filepath: Path = Path("../data/fake_user_agents.json")
         agents: list = Field(default_factory=list)
 
         def load(self):
@@ -86,4 +86,4 @@ class UserDevices:
 
 
 user_devices = UserDevices(cfg.user_id)
-to_run = user_devices.get_devices(cfg.device_count)
+#to_run = user_devices.get_devices(cfg.device_count)

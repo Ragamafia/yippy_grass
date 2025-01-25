@@ -11,17 +11,17 @@ from config import cfg
 
 SOCKET_URL = random.choice(cfg.urls)
 
-headers = {"id": "",
-           "origin_action": "AUTH",
-           "result": {"browser_id": "",
-                      "user_id": "",
-                      "user_agent": "",
-                      "timestamp": 1736645161,
-                      "device_type": "extension",
-                      "version": "4.26.2",
-                      "extension_id": "ilehaonighjijnmpnagapkhpcdbhclfg"
-                      }
-           }
+auth = {"id": "",
+        "origin_action": "AUTH",
+        "result": {"browser_id": "",
+                   "user_id": "",
+                   "user_agent": "",
+                   "timestamp": 1736645161,
+                   "device_type": "extension",
+                   "version": "4.26.2",
+                   "extension_id": "ilehaonighjijnmpnagapkhpcdbhclfg"
+                   }
+        }
 
 http_request = {"id": "",
                 "origin_action": "HTTP_REQUEST",
@@ -47,15 +47,16 @@ pong = {"id": "", "origin_action": "PONG"}
 class Connect:
     session: ClientSession
     proxy: str
-    headers: dict
+    msg: dict
+    auth: dict
     http_request: dict
     ping: dict
     pong: dict
 
-    def __init__(self, session, proxy, headers):
+    def __init__(self, session, proxy, msg):
         self.session = session
         self.proxy = proxy
-        self.headers = headers
+        self.msg = msg
 
     async def connect_to_ws(self):
         connected = False
@@ -69,7 +70,7 @@ class Connect:
                     logger.info(f"<- Received: {self.data}")
 
                     if self.data.get('action') == "AUTH":
-                        await self.send_headers()
+                        await self.send_auth()
 
                     elif self.data.get('action') == "HTTP_REQUEST":
                         if await self.send_http_request():
@@ -84,11 +85,14 @@ class Connect:
         except Exception as e:
             logger.error(f"<- Message not received: {e} - {self.data}")
 
-    async def send_headers(self):
+    async def send_auth(self):
+        auth["id"] = self.data.get("id")
+        auth["result"]["browser_id"] = self.msg.get("device_id")
+        auth["result"]["user_id"] = self.msg.get("user_id")
+        auth["result"]["user_agent"] = self.msg.get("user_agent")
 
-        self.headers["id"] = self.data.get("id")
-        await self.ws.send_json(self.headers)
-        logger.info(f" -> Sending: {self.headers}")
+        await self.ws.send_json(auth)
+        logger.info(f" -> Sending: {auth}")
 
     async def send_http_request(self):
         http_request["id"] = self.data.get("id")

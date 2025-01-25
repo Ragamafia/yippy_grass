@@ -12,7 +12,7 @@ class Config(BaseSettings):
         'wss://proxy2.wynd.network:4650',
     ]
 
-    device_count: int = 5
+    device_count: int = 2
 
     ATTEMPTS: int = 50
     proxy_check_timeout: int = 6
