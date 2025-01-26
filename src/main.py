@@ -11,9 +11,8 @@ from config import cfg
 
 devices = user_devices.get_devices(cfg.device_count)
 
-
 async def run_device(user_agent):
-    async with ClientSession(trust_env=True) as session:
+    async with ClientSession(trust_env=True, headers={"user_agent": user_agent}) as session:
         for _ in range(cfg.ATTEMPTS):
             try:
                 proxy = await get_proxy()

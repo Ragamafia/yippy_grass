@@ -20,7 +20,7 @@ temp/
 /*/**/node_modules/
 lefthook.yml
 env/*
-data/*
+
 !env/*.*.*
 /.venv/
 /backup
@@ -28,7 +28,6 @@ data/*
 iqt.egg-info
 src/webdriver
 devices.json
-
-
+data/*
 
 
