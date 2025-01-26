@@ -86,4 +86,3 @@ class UserDevices:
 
 
 user_devices = UserDevices(cfg.user_id)
-#to_run = user_devices.get_devices(cfg.device_count)

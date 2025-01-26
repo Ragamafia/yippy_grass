@@ -27,7 +27,7 @@ auth = {
 
 http_request = {
     "id": "",
-    "origin_action": "HTTP_REQUEST",
+    "action": "HTTP_REQUEST",
     "data": {
         "url": "",
         "method": "GET",
@@ -51,16 +51,16 @@ class Connect:
     ping: dict
     pong: dict
 
-    def __init__(self, session, proxy, user_agent):
+    def __init__(self, session, user_agent, proxy):
         self.session = session
-        self.proxy = proxy
         self.user_agent = user_agent
+        self.proxy = proxy
 
     async def connect_to_ws(self):
         connected = False
 
         kwargs = {
-            "proxy": self.proxy,
+
             "headers": {
                 "User-Agent": self.user_agent.get("user_agent"),
                 "Accept": "application/json",
@@ -70,7 +70,7 @@ class Connect:
         }
 
         try:
-            async with self.session.ws_connect(SOCKET_URL, **kwargs) as self.ws:
+            async with self.session.ws_connect(SOCKET_URL, proxy=self.proxy, **kwargs) as self.ws:
                 async for message in self.ws:
 
                     message_data = message.__getattribute__('data')
@@ -81,8 +81,13 @@ class Connect:
                         await self.send_auth()
 
                     elif self.data.get('action') == "HTTP_REQUEST":
-                        if await self.send_http_request():
-                            await self.send_ping()
+                        url = self.data.get("data").get("url")
+                        async with self.session.get(url, **kwargs) as response:
+                            body = await response.text()
+                            print(body)
+
+                        # if await self.send_http_request():
+                        #     await self.send_ping()
 
                     elif self.data.get('action') == "PONG":
                         await self.send_pong()
@@ -91,7 +96,7 @@ class Connect:
             return connected
 
         except Exception as e:
-            logger.error(f"<- Message not received: {e} - {self.data}")
+            logger.error(f"<- Connect error: {e} - {self.data}")
 
     async def send_auth(self):
         auth["id"] = self.data.get("id")

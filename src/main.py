@@ -13,7 +13,7 @@ devices = user_devices.get_devices(cfg.device_count)
 
 
 async def run_device(user_agent):
-    async with ClientSession() as session:
+    async with ClientSession(trust_env=True) as session:
         for _ in range(cfg.ATTEMPTS):
             try:
                 proxy = await get_proxy()
