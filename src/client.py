@@ -11,33 +11,31 @@ from config import cfg
 
 SOCKET_URL = random.choice(cfg.urls)
 
-auth = {"id": "",
-        "origin_action": "AUTH",
-        "result": {"browser_id": "",
-                   "user_id": "",
-                   "user_agent": "",
-                   "timestamp": 1736645161,
-                   "device_type": "extension",
-                   "version": "4.26.2",
-                   "extension_id": "ilehaonighjijnmpnagapkhpcdbhclfg"
-                   }
+auth = {
+    "id": "",
+    "origin_action": "AUTH",
+    "result": {
+        "browser_id": "",
+        "user_id": "",
+        #"user_agent": "",
+        "timestamp": 1736645161,
+        "device_type": "extension",
+        "version": "4.26.2",
+        "extension_id": "ilehaonighjijnmpnagapkhpcdbhclfg"
+    }
         }
 
-http_request = {"id": "",
-                "origin_action": "HTTP_REQUEST",
-                "result": {"url": "",
-                           "status": 200,
-                           "status_text": "",
-                           "headers": {"cf-cache-status": "DYNAMIC",
-                                       "cf-ray": "90224205fdc6021e-CDG",
-                                       "content-length": "29",
-                                       "content-type": "application/json; charset=utf-8",
-                                       "date": "Wed, 15 Jan 2025 01:57:56 GMT",
-                                       "etag": "W/\"1d-59r+cbUG0HhXFjR4xmDw4JJ70Oo\"", "nel": "{\"success_fraction\":0,\"report_to\":\"cf-nel\",\"max_age\":604800}",
-                                       "report-to": "{\"endpoints\":[{\"url\":\"https:\\/\\/a.nel.cloudflare.com\\/report\\/v4?s=9riLXFAH3j7zpoQiJG2BOgWFzSifwtoiR2Xeoi9LVlhEcXd1CYpleXFuIS6iHakRRKJSvqoQfZ%2BsZSCJsynEJzCS9cNsA%2FukLhO%2FtU9cCikb5D%2FxLjBsoCHdSc0KOFnCsQ%3D%3D\"}],\"group\":\"cf-nel\",\"max_age\": 604800}",
-                                       "server": "cloudflare", "server-timing": "cfL4;desc=\"?proto=TCP&rtt=4858&min_rtt=4838&rtt_var=1036&sent=5&recv=10&lost=0&retrans=0&sent_bytes=2840&recv_bytes=964&delivery_rate=601070&cwnd=253&unsent_bytes=0&cid=69fa6ba98460f2ba&ts=372&x=0\"", "vary": "Origin", "x-powered-by": "Express"}, "body": "eyJjb2RlIjoiJ2VaV0RnYUFaWkJFQXpRRmInIn0="
-                           }
-                }
+http_request = {
+    "id": "",
+    "origin_action": "HTTP_REQUEST",
+    "data": {
+        "url": "",
+        "method": "GET",
+        "headers": {},
+    },
+    "body": None,
+    "authenticated": False
+}
 
 ping = {"id": "", "version": "1.0.0", "action": "PING", "data": {}}
 
@@ -47,22 +45,32 @@ pong = {"id": "", "origin_action": "PONG"}
 class Connect:
     session: ClientSession
     proxy: str
-    msg: dict
+    user_agent: dict
     auth: dict
     http_request: dict
     ping: dict
     pong: dict
 
-    def __init__(self, session, proxy, msg):
+    def __init__(self, session, proxy, user_agent):
         self.session = session
         self.proxy = proxy
-        self.msg = msg
+        self.user_agent = user_agent
 
     async def connect_to_ws(self):
         connected = False
 
+        kwargs = {
+            "proxy": self.proxy,
+            "headers": {
+                "User-Agent": self.user_agent.get("user_agent"),
+                "Accept": "application/json",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7"
+            }
+        }
+
         try:
-            async with self.session.ws_connect(SOCKET_URL, proxy=self.proxy) as self.ws:
+            async with self.session.ws_connect(SOCKET_URL, **kwargs) as self.ws:
                 async for message in self.ws:
 
                     message_data = message.__getattribute__('data')
@@ -87,31 +95,33 @@ class Connect:
 
     async def send_auth(self):
         auth["id"] = self.data.get("id")
-        auth["result"]["browser_id"] = self.msg.get("device_id")
-        auth["result"]["user_id"] = self.msg.get("user_id")
-        auth["result"]["user_agent"] = self.msg.get("user_agent")
+        auth["result"]["browser_id"] = self.user_agent.get("device_id")
+        auth["result"]["user_id"] = self.user_agent.get("user_id")
+        auth["result"]["user_agent"] = self.user_agent.get("user_agent")
 
         await self.ws.send_json(auth)
         logger.info(f" -> Sending: {auth}")
 
     async def send_http_request(self):
         http_request["id"] = self.data.get("id")
-        http_request["result"]["url"] = self.data.get("data").get("url")
+        http_request["data"]["url"] = self.data.get("data").get("url")
+        http_request["data"]["headers"] = self.user_agent
+
         await self.ws.send_json(http_request)
-        logger.info(f"-> Send message: {http_request}")
+        logger.info(f"-> Sending: {http_request}")
         return True
 
     async def send_ping(self):
         ping["id"] = str(uuid.uuid3(uuid.NAMESPACE_DNS, SOCKET_URL))
         await self.ws.send_json(ping)
-        logger.info(f"-> Send message: {ping}")
+        logger.info(f"-> Sending: {ping}")
 
     async def send_pong(self):
         pong["id"] = self.data.get("id")
         ping["id"] = str(uuid.uuid4())
         await self.ws.send_json(pong)
-        logger.info(f'-> Send message: {pong}')
+        logger.info(f'-> Sending: {pong}')
 
         time.sleep(cfg.request_time_sleep)
         await self.ws.send_json(ping)
-        logger.info(f"-> Send message: {ping}")
+        logger.info(f"-> Sending: {ping}")
