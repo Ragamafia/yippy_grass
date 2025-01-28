@@ -28,6 +28,6 @@ env/*
 iqt.egg-info
 src/webdriver
 devices.json
-data/*
+
 
 
