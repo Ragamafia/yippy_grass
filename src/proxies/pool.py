@@ -14,6 +14,7 @@ from src.proxies.models import Proxy
 TIMEOUT = ClientTimeout(total=cfg.proxy_check_timeout)
 
 
+
 async def get_scam_rate(ip: str):
     async with ClientSession() as session:
         for i in range(cfg.proxy_scam_check_attempts):

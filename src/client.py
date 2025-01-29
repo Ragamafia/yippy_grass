@@ -1,9 +1,12 @@
 import asyncio
 import json
 import random
+import aiohttp
 
 from loguru import logger
 from aiohttp import ClientSession
+from aiocfscrape import CloudflareScraper
+from aiohttp_proxy import ProxyConnector, ProxyType
 
 from proxies.pool import get_proxy
 from base import user_devices
@@ -12,7 +15,11 @@ from config import cfg
 
 SOCKET_URL = random.choice(cfg.urls)
 
+ping = {"id": "", "version": "1.0.0", "action": "PING", "data": {}}
+
+
 async def parse_message(session: ClientSession, message: dict, device: dict, proxy:str, headers: dict):
+
     if message.get('action') == "AUTH":
         return {
             "id": "",
@@ -35,19 +42,32 @@ async def parse_message(session: ClientSession, message: dict, device: dict, pro
         url = message.get("data").get("url")
         async with session.get(url, proxy=proxy, headers=headers) as response:
             body = await response.text()
-            print(body)
             return {
                 "id": "",
                 "action": "HTTP_REQUEST",
                 "data": {
                     "url": url,
                     "method": "GET",
-                    "headers": response.headers,
+                    "headers": dict(response.headers),
                 },
                 "body": body,
                 "authenticated": False
             }
 
+def get_proxy_connector():
+    https_proxy = True
+    connector = ProxyConnector(
+        proxy_type=ProxyType.HTTP if https_proxy else ProxyType.HTTPS,
+        host=cfg.host,
+        port=10200,
+        username=cfg.login,
+        password=cfg.password,
+    )
+    connector.proxy_auth = aiohttp.BasicAuth(
+        cfg.login,
+        cfg.password,
+    )
+    return connector
 
 async def run_device(device):
     headers = {
@@ -61,7 +81,10 @@ async def run_device(device):
         "headers": headers
     }
     proxy = await get_proxy()
-    async with ClientSession(**kwargs) as session:
+    connector = get_proxy_connector()
+
+    async with CloudflareScraper(connector=connector, **kwargs) as session:
+    #async with ClientSession(**kwargs) as session:
         logger.info(f'Connecting WS with proxy: {proxy.url}')
         async with session.ws_connect(SOCKET_URL) as ws:
             async for message in ws:
@@ -70,6 +93,8 @@ async def run_device(device):
                 if response := await parse_message(session, message, device, proxy.url, headers):
                     response["id"] = message["id"]
                     await ws.send_json(response)
+                    #await ws.send_json(ping)
+                    logger.info(f"<- Send: {response}")
 
 
 async def main():
