@@ -2,6 +2,7 @@ import asyncio
 import json
 import random
 import aiohttp
+import uuid
 
 from loguru import logger
 from aiohttp import ClientSession
@@ -15,12 +16,11 @@ from config import cfg
 
 SOCKET_URL = random.choice(cfg.urls)
 
-ping = {"id": "", "version": "1.0.0", "action": "PING", "data": {}}
-
 
 async def parse_message(session: ClientSession, message: dict, device: dict, proxy:str, headers: dict):
 
     if message.get('action') == "AUTH":
+
         return {
             "id": "",
             "origin_action": "AUTH",
@@ -54,6 +54,14 @@ async def parse_message(session: ClientSession, message: dict, device: dict, pro
                 "authenticated": False
             }
 
+
+async def send_ping(ws):
+    ping = {"id": str(uuid.uuid4()), "version": "1.0.0", "action": "PING", "data": {}}
+    await ws.send_json(ping)
+    logger.info(f"<- Send: {ping}")
+    await asyncio.sleep(15)
+
+
 def get_proxy_connector():
     https_proxy = True
     connector = ProxyConnector(
@@ -68,6 +76,7 @@ def get_proxy_connector():
         cfg.password,
     )
     return connector
+
 
 async def run_device(device):
     headers = {
@@ -93,7 +102,7 @@ async def run_device(device):
                 if response := await parse_message(session, message, device, proxy.url, headers):
                     response["id"] = message["id"]
                     await ws.send_json(response)
-                    #await ws.send_json(ping)
+                    await send_ping(ws=ws)
                     logger.info(f"<- Send: {response}")
 
 

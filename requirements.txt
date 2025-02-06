@@ -6,3 +6,4 @@ pydantic-settings
 loguru
 bs4
 python-dotenv
+aiocfscrape

@@ -7,7 +7,9 @@ from config import cfg
 
 
 try:
-    import fake_useragent
+    from fake_useragent import UserAgent
+    fake_useragent = UserAgent()
+
 except TypeError:
 
     class FakeOfFakeUserAgent:
