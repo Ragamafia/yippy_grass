@@ -20,7 +20,6 @@ SOCKET_URL = random.choice(cfg.urls)
 async def parse_message(session: ClientSession, message: dict, device: dict, proxy:str, headers: dict):
 
     if message.get('action') == "AUTH":
-
         return {
             "id": "",
             "origin_action": "AUTH",
@@ -55,13 +54,6 @@ async def parse_message(session: ClientSession, message: dict, device: dict, pro
             }
 
 
-async def send_ping(ws):
-    ping = {"id": str(uuid.uuid4()), "version": "1.0.0", "action": "PING", "data": {}}
-    await ws.send_json(ping)
-    logger.info(f"<- Send: {ping}")
-    await asyncio.sleep(15)
-
-
 def get_proxy_connector():
     https_proxy = True
     connector = ProxyConnector(
@@ -76,6 +68,13 @@ def get_proxy_connector():
         cfg.password,
     )
     return connector
+
+
+async def send_ping(ws):
+    ping = {"id": str(uuid.uuid4()), "version": "1.0.0", "action": "PING", "data": {}}
+    await ws.send_json(ping)
+    logger.info(f"<- Send: {ping}")
+    await asyncio.sleep(20)
 
 
 async def run_device(device):
@@ -101,8 +100,8 @@ async def run_device(device):
                 logger.success(f"<- Received: {message}")
                 if response := await parse_message(session, message, device, proxy.url, headers):
                     response["id"] = message["id"]
+                    await send_ping(ws)
                     await ws.send_json(response)
-                    await send_ping(ws=ws)
                     logger.info(f"<- Send: {response}")
 
 

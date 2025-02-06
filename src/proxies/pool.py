@@ -8,8 +8,8 @@ from aiohttp import ClientSession, ClientTimeout
 from aiohttp_proxy import ProxyConnector, ProxyType
 from bs4 import BeautifulSoup as bs
 
-from config import cfg
-from proxies.models import Proxy
+from src.config import cfg
+from src.proxies.models import Proxy
 
 TIMEOUT = ClientTimeout(total=cfg.proxy_check_timeout)
 
