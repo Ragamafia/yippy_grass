@@ -59,7 +59,7 @@ def get_proxy_connector():
     connector = ProxyConnector(
         proxy_type=ProxyType.HTTP if https_proxy else ProxyType.HTTPS,
         host=cfg.host,
-        port=10200,
+        port=10300,
         username=cfg.login,
         password=cfg.password,
     )
@@ -91,8 +91,8 @@ async def run_device(device):
     proxy = await get_proxy()
     connector = get_proxy_connector()
 
-    async with CloudflareScraper(connector=connector, **kwargs) as session:
-    #async with ClientSession(**kwargs) as session:
+    #async with CloudflareScraper(connector=connector, **kwargs) as session:
+    async with ClientSession(**kwargs) as session:
         logger.info(f'Connecting WS with proxy: {proxy.url}')
         async with session.ws_connect(SOCKET_URL) as ws:
             async for message in ws:
@@ -100,9 +100,10 @@ async def run_device(device):
                 logger.success(f"<- Received: {message}")
                 if response := await parse_message(session, message, device, proxy.url, headers):
                     response["id"] = message["id"]
-                    await send_ping(ws)
                     await ws.send_json(response)
                     logger.info(f"<- Send: {response}")
+
+            await send_ping(ws)
 
 
 async def main():
