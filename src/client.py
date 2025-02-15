@@ -17,7 +17,7 @@ from config import cfg
 SOCKET_URL = random.choice(cfg.urls)
 
 
-async def parse_message(session: ClientSession, message: dict, device: dict, proxy:str, headers: dict):
+async def parse_message(session: ClientSession, ws, message: dict, device: dict, proxy:str, headers: dict):
 
     if message.get('action') == "AUTH":
         return {
@@ -38,6 +38,8 @@ async def parse_message(session: ClientSession, message: dict, device: dict, pro
         return {"id": "", "origin_action": "PONG"}
 
     if message.get('action') == "HTTP_REQUEST":
+        await send_ping(ws)
+
         url = message.get("data").get("url")
         async with session.get(url, proxy=proxy, headers=headers) as response:
             body = await response.text()
@@ -95,15 +97,16 @@ async def run_device(device):
     async with ClientSession(**kwargs) as session:
         logger.info(f'Connecting WS with proxy: {proxy.url}')
         async with session.ws_connect(SOCKET_URL) as ws:
-            async for message in ws:
-                message = json.loads(message.data)
-                logger.success(f"<- Received: {message}")
-                if response := await parse_message(session, message, device, proxy.url, headers):
-                    response["id"] = message["id"]
-                    await ws.send_json(response)
-                    logger.info(f"<- Send: {response}")
+            while True:
+                async for message in ws:
+                    message = json.loads(message.data)
+                    logger.success(f"<- Received: {message}")
+                    if response := await parse_message(session, ws, message, device, proxy.url, headers):
+                        response["id"] = message["id"]
+                        await ws.send_json(response)
+                        logger.info(f"<- Send: {response}")
 
-            await send_ping(ws)
+                    await send_ping(ws)
 
 
 async def main():
